@@ -7,7 +7,7 @@ Create a PNG from any file. Pitched by [c3er](https://github.com/c3er) at
 $ binpic /bin/ls
 ```
 
-Encode a binary as [grayscale image](https://golang.org/pkg/image/#Gray), optionally resize.
+Encode a file as [grayscale image](https://golang.org/pkg/image/#Gray), optionally resize.
 
 ```shell
 $ binpic -h
