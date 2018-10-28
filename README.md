@@ -1,7 +1,8 @@
 # binpic
 
 Create a PNG from any file. Pitched by [c3er](https://github.com/c3er) at
-[devopenspace](https://twitter.com/devopenspace) 2018.
+[devopenspace](https://twitter.com/devopenspace) 2018 (see also:
+[bin2img](https://github.com/c3er/bin2img)).
 
 ```shell
 $ binpic /bin/ls
