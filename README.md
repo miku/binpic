@@ -80,3 +80,6 @@ $ go get github.com/miku/binpic/cmd/...
 
 ![](gallery/dbm.png)
 
+### wav
+
+![](gallery/wav.png)
