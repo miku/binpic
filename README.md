@@ -28,7 +28,7 @@ $ go get github.com/miku/binpic/cmd/...
 
 ## Gallery
 
-### binpic binary (x86_64)
+### binpic binary (amd64)
 
 ![](output.png)
 
