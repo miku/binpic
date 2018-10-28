@@ -28,20 +28,18 @@ func parseDims(s string) (width, height int) {
 		return 0, 0
 	}
 	var err error
-	width, err = strconv.Atoi(strings.TrimSpace(parts[0]))
-	if err != nil {
+	if width, err = strconv.Atoi(strings.TrimSpace(parts[0])); err != nil {
 		return 0, 0
 	}
-	height, err = strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err != nil {
+	if height, err = strconv.Atoi(strings.TrimSpace(parts[1])); err != nil {
 		return 0, 0
 	}
 	return width, height
 }
 
-// dimsFromSize returns suggested image dimensions given number of pixels. The
-// pct parameter can be used to control the ratio, e.g. given 0.15 the image
-// height will be 15% less than the square.
+// dimsFromSize returns suggested image dimensions given the number of pixels
+// e.g. from filesize. The pct parameter can be used to control the ratio,
+// e.g. given 0.15 the image height will be 15% less than the square.
 func dimsFromSize(size int64, pct float64) (width, height int) {
 	sizef := float64(size)
 	sq := math.Sqrt(sizef)
