@@ -17,6 +17,13 @@ Usage of binpic:
   -resize string
         resize, if set (default "0x0")
 ```
+## Install
+
+This is a toy project, still want to try it out?
+
+```shell
+$ go get github.com/miku/binpic/cmd/...
+```
 
 ## Gallery
 
