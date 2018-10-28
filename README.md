@@ -76,3 +76,7 @@ $ go get github.com/miku/binpic/cmd/...
 
 ![](gallery/marc21.png)
 
+### [DBM](https://en.wikipedia.org/wiki/Dbm)
+
+![](gallery/dbm.png)
+
