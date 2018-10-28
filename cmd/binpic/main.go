@@ -21,7 +21,7 @@ var (
 	output = flag.String("o", "output.png", "output file, will be a PNG")
 )
 
-// parseDims parses dimensions or returns 0, if there was an error parsing.
+// parseDims parses dimensions (like 200x100) or returns 0, if there was any error while parsing.
 func parseDims(s string) (width, height int) {
 	parts := strings.Split(s, "x")
 	if len(parts) != 2 {
@@ -39,7 +39,9 @@ func parseDims(s string) (width, height int) {
 	return width, height
 }
 
-// dimsFromSize returns image dimensions given number of pixels.
+// dimsFromSize returns suggested image dimensions given number of pixels. The
+// pct parameter can be used to control the ratio, e.g. given 0.15 the image
+// height will be 15% less than the square.
 func dimsFromSize(size int64, pct float64) (width, height int) {
 	sizef := float64(size)
 	sq := math.Sqrt(sizef)
@@ -54,6 +56,7 @@ func main() {
 		log.Fatal("input file required")
 	}
 
+	// Determine size.
 	filename := flag.Arg(0)
 	fi, err := os.Stat(filename)
 	if err != nil {
@@ -61,7 +64,6 @@ func main() {
 	}
 	size := fi.Size()
 	w, h := dimsFromSize(size, 0.15)
-	log.Printf("%d, %dx%d, %d\n", size, w, h, w*h)
 
 	// A Rectangle contains the points with Min.X <= X < Max.X, Min.Y <= Y <
 	// Max.Y. It is well-formed if Min.X <= Max.X and likewise for Y. Points
@@ -73,18 +75,22 @@ func main() {
 	}
 	img := image.NewGray(rect)
 
+	// Open file.
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 
+	// Reader that allows to read byte per byte.
 	br := bufio.NewReader(f)
 
+	// Create a line by line image.
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			b, err := br.ReadByte()
 			if err == io.EOF {
+				// Fill excess pixels.
 				img.Set(x, y, color.Gray{255})
 				continue
 			}
@@ -115,5 +121,4 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
 }
