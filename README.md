@@ -64,7 +64,7 @@ $ go get github.com/miku/binpic/cmd/...
 
 ![](gallery/xml.png)
 
-### Leveldb file
+### LevelDB file
 
 ![](gallery/ldb.png)
 
