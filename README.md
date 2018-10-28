@@ -28,23 +28,23 @@ $ go get github.com/miku/binpic/cmd/...
 
 ## Gallery
 
-### binpic
+### binpic binary
 
 ![](output.png)
 
-### ls
+### ls (coreutils)
 
 ![](gallery/ls.png)
 
-### go
+### The go tool
 
 ![](gallery/go.png)
 
-### caffe model file
+### Caffe model file
 
 ![](gallery/lenet.png)
 
-### protocol buffer
+### Protocol Buffer
 
 ![](gallery/pb.png)
 
@@ -56,11 +56,11 @@ $ go get github.com/miku/binpic/cmd/...
 
 ![](gallery/webm.png)
 
-### xml
+### XML
 
 ![](gallery/xml.png)
 
-### leveldb file
+### Leveldb file
 
 ![](gallery/ldb.png)
 
@@ -71,3 +71,4 @@ $ go get github.com/miku/binpic/cmd/...
 ### MARC21
 
 ![](gallery/marc21.png)
+
