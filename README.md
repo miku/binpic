@@ -28,9 +28,13 @@ $ go get github.com/miku/binpic/cmd/...
 
 ## Gallery
 
-### binpic binary
+### binpic Linux binary
 
 ![](output.png)
+
+### binpic Arm binary
+
+![](gallery/arm.png)
 
 ### ls (coreutils)
 
