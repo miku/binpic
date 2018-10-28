@@ -40,7 +40,7 @@ $ go get github.com/miku/binpic/cmd/...
 
 ![](gallery/go.png)
 
-### caffe
+### caffe model file
 
 ![](gallery/lenet.png)
 
