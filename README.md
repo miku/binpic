@@ -18,6 +18,12 @@ Usage of binpic:
   -resize string
         resize, if set (default "0x0")
 ```
+
+Thanks to the beautiful Go standard library packages like
+[image](https://golang.org/pkg/image/) and [io](https://golang.org/pkg/io/),
+this is little more complex than a *Hello World*. This [simple image
+library](https://github.com/disintegration/imaging) helps, too.
+
 ## Install
 
 This is a toy project, still want to try it out?
