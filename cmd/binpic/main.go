@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -78,11 +79,24 @@ func (enc *Encoder) shouldResize() bool {
 // concrete types. XXX: Accept arbitrary readers through tempfile.
 func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 	f, ok := r.(*os.File)
-	if !ok {
-		return fmt.Errorf("not yet implemented")
+	if !ok || f == os.Stdin {
+		tf, err := ioutil.TempFile("", "binpic-temp-*.file")
+		if err != nil {
+			return err
+		}
+		defer os.Remove(tf.Name())
+		defer tf.Close()
+		if _, err := io.Copy(tf, r); err != nil {
+			return err
+		}
+		if _, err := tf.Seek(0, io.SeekStart); err != nil {
+			return err
+		}
+		f = tf
 	}
 
 	fi, err := os.Stat(f.Name())
+	log.Println(f.Name(), fi)
 	if err != nil {
 		return err
 	}
@@ -131,16 +145,16 @@ func main() {
 		fmt.Printf("%s\n", Version)
 		os.Exit(0)
 	}
+	var r io.Reader = os.Stdin
 
-	if flag.NArg() == 0 {
-		log.Fatal("input file required")
+	if flag.NArg() > 0 {
+		f, err := os.Open(flag.Arg(0))
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		r = f
 	}
-
-	f, err := os.Open(flag.Arg(0))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
 
 	of, err := os.Create(*output)
 	if err != nil {
@@ -154,7 +168,7 @@ func main() {
 	enc := NewEncoder()
 	enc.Resize.W, enc.Resize.H = parseDims(*dims)
 
-	if err := enc.Encode(bw, f); err != nil {
+	if err := enc.Encode(bw, r); err != nil {
 		log.Fatal(err)
 	}
 }
