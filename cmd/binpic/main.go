@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -16,9 +17,13 @@ import (
 	"github.com/disintegration/imaging"
 )
 
+const Version = "0.1.0"
+
 var (
-	dims   = flag.String("resize", "0x0", "resize, if set")
-	output = flag.String("o", "output.png", "output file, will be a PNG")
+	decode  = flag.Bool("d", false, "decode a binpic-ed png")
+	dims    = flag.String("resize", "0x0", "resize, if set")
+	output  = flag.String("o", "output.png", "output file, will be a PNG")
+	version = flag.Bool("version", false, "show version")
 )
 
 // parseDims parses dimensions (like 200x100) or returns 0, if there was any error while parsing.
@@ -48,75 +53,108 @@ func dimsFromSize(size int64, pct float64) (width, height int) {
 	return int(w), int(h)
 }
 
-func main() {
-	flag.Parse()
-	if flag.NArg() == 0 {
-		log.Fatal("input file required")
+// Encoder can encode bytes into an image, with optional resize.
+type Encoder struct {
+	Resize struct {
+		W int
+		H int
+	}
+	RatioPct float64
+	Fill     uint8
+}
+
+// NewEncoder creates an file-to-image encoder with defaults.
+func NewEncoder() *Encoder {
+	return &Encoder{RatioPct: 0.15, Fill: 255}
+}
+
+// shouldResize indicated, whether image should be resized in the process.
+func (enc *Encoder) shouldResize() bool {
+	return enc.Resize.W > 0 && enc.Resize.H > 0
+}
+
+// Encode reads bytes from reader and writes a PNG image to the writer.
+// Although a reader is accepted, the implementation might be limited to more
+// concrete types. XXX: Accept arbitrary readers through tempfile.
+func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
+	f, ok := r.(*os.File)
+	if !ok {
+		return fmt.Errorf("not yet implemented")
 	}
 
-	// Determine size.
-	filename := flag.Arg(0)
-	fi, err := os.Stat(filename)
+	fi, err := os.Stat(f.Name())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	size := fi.Size()
-	w, h := dimsFromSize(size, 0.15)
+	width, height := dimsFromSize(fi.Size(), enc.RatioPct)
 
 	// A Rectangle contains the points with Min.X <= X < Max.X, Min.Y <= Y <
 	// Max.Y. It is well-formed if Min.X <= Max.X and likewise for Y. Points
 	// are always well-formed. A rectangle's methods always return well-formed
 	// outputs for well-formed inputs.
 	rect := image.Rectangle{
-		Min: image.Point{X: 0, Y: 0}, // up left
-		Max: image.Point{X: w, Y: h}, // down right
+		Min: image.Point{X: 0, Y: 0},          // up left
+		Max: image.Point{X: width, Y: height}, // down right
 	}
 	img := image.NewGray(rect)
-
-	// Open file.
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
 
 	// Reader that allows to read byte per byte.
 	br := bufio.NewReader(f)
 
 	// Create a line by line image.
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
 			b, err := br.ReadByte()
 			if err == io.EOF {
 				// Fill excess pixels.
-				img.Set(x, y, color.Gray{255})
+				img.Set(x, y, color.Gray{enc.Fill})
 				continue
 			}
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			img.Set(x, y, color.Gray{b})
 		}
 	}
 
-	// Write out.
-	fout, err := os.Create(*output)
+	var output image.Image = img
+	if enc.shouldResize() {
+		output = imaging.Resize(img, enc.Resize.W, enc.Resize.H, imaging.Lanczos)
+	}
+	return png.Encode(w, output)
+}
+
+func main() {
+	flag.Parse()
+
+	if *version {
+		fmt.Printf("%s\n", Version)
+		os.Exit(0)
+	}
+
+	if flag.NArg() == 0 {
+		log.Fatal("input file required")
+	}
+
+	f, err := os.Open(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer fout.Close()
+	defer f.Close()
 
-	// Resize, if requested.
-	resizeWidth, resizeHeight := parseDims(*dims)
-	switch {
-	case resizeWidth > 0 && resizeHeight > 0:
-		resized := imaging.Resize(img, resizeWidth, resizeHeight, imaging.Lanczos)
-		if err := png.Encode(fout, resized); err != nil {
-			log.Fatal(err)
-		}
-	default:
-		if err := png.Encode(fout, img); err != nil {
-			log.Fatal(err)
-		}
+	of, err := os.Create(*output)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer of.Close()
+
+	bw := bufio.NewWriter(of)
+	defer bw.Flush()
+
+	enc := NewEncoder()
+	enc.Resize.W, enc.Resize.H = parseDims(*dims)
+
+	if err := enc.Encode(bw, f); err != nil {
+		log.Fatal(err)
 	}
 }
