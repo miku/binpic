@@ -96,7 +96,6 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 	}
 
 	fi, err := os.Stat(f.Name())
-	log.Println(f.Name(), fi)
 	if err != nil {
 		return err
 	}
