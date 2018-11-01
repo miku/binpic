@@ -21,7 +21,7 @@ import (
 const Version = "0.1.0"
 
 var (
-	decode  = flag.Bool("d", false, "decode a binpic-ed png")
+	decode  = flag.Bool("d", false, "decode a binpic-ed png (XXX: not yet implemented)")
 	dims    = flag.String("resize", "0x0", "resize, if set")
 	output  = flag.String("o", "output.png", "output file, will be a PNG")
 	version = flag.Bool("version", false, "show version")
