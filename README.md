@@ -13,11 +13,18 @@ Encode a file as [grayscale image](https://golang.org/pkg/image/#Gray), optional
 ```shell
 $ binpic -h
 Usage of binpic:
+  -color
+        produce an image with colored pixels
+  -d    decode a binpic-ed png (XXX: not yet implemented)
   -o string
         output file, will be a PNG (default "output.png")
   -resize string
         resize, if set (default "0x0")
+  -version
+        show version
 ```
+
+Take care to put the options before the file to decode.
 
 Thanks to the beautiful Go standard library packages like
 [image](https://golang.org/pkg/image/) and [io](https://golang.org/pkg/io/),
