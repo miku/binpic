@@ -18,7 +18,8 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-const Version = "0.1.0"
+// Version is the current version of this tool.
+const Version = "0.2.0"
 
 var (
 	decode  = flag.Bool("d", false, "decode a binpic-ed png (XXX: not yet implemented)")
