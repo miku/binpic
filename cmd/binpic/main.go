@@ -22,10 +22,11 @@ import (
 const Version = "0.2.0"
 
 var (
-	decode  = flag.Bool("d", false, "decode a binpic-ed png (XXX: not yet implemented)")
-	dims    = flag.String("resize", "0x0", "resize, if set")
-	output  = flag.String("o", "output.png", "output file, will be a PNG")
-	version = flag.Bool("version", false, "show version")
+	decode   = flag.Bool("d", false, "decode a binpic-ed png (XXX: not yet implemented)")
+	hasColor = flag.Bool("color", false, "produce an image with colored pixels")
+	dims     = flag.String("resize", "0x0", "resize, if set")
+	output   = flag.String("o", "output.png", "output file, will be a PNG")
+	version  = flag.Bool("version", false, "show version")
 )
 
 // parseDims parses dimensions (like 200x100) or returns 0, if there was any error while parsing.
@@ -55,6 +56,19 @@ func dimsFromSize(size int64, pct float64) (width, height int) {
 	return int(w), int(h)
 }
 
+func calcGreyShade(b byte) color.RGBA {
+	return color.RGBA{b, b, b, 0xff}
+}
+
+func calcColor(b byte) color.RGBA {
+	return color.RGBA{
+		((b & 0300) >> 6) * 64,
+		((b & 0070) >> 3) * 32,
+		(b & 0007) * 32,
+		0xff,
+	}
+}
+
 // Encoder can encode bytes into an image, with optional resize.
 type Encoder struct {
 	Resize struct {
@@ -78,7 +92,7 @@ func (enc *Encoder) shouldResize() bool {
 // Encode reads bytes from reader and writes a PNG image to the writer.
 // Although a reader is accepted, the implementation might be limited to more
 // concrete types. XXX: Accept arbitrary readers through tempfile.
-func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
+func (enc *Encoder) Encode(w io.Writer, r io.Reader, hasColor bool) error {
 	f, ok := r.(*os.File)
 	if !ok || f == os.Stdin {
 		tf, err := ioutil.TempFile("", "binpic-temp-*.file")
@@ -110,10 +124,18 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 		Min: image.Point{X: 0, Y: 0},          // up left
 		Max: image.Point{X: width, Y: height}, // down right
 	}
-	img := image.NewGray(rect)
+	img := image.NewRGBA(rect)
 
 	// Reader that allows to read byte per byte.
 	br := bufio.NewReader(f)
+
+	// Determine pixel generation algorithm.
+	var colorFunc func(byte) color.RGBA
+	if hasColor {
+		colorFunc = calcColor
+	} else {
+		colorFunc = calcGreyShade
+	}
 
 	// Create a line by line image.
 	for y := 0; y < height; y++ {
@@ -127,7 +149,7 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 			if err != nil {
 				return err
 			}
-			img.Set(x, y, color.Gray{b})
+			img.Set(x, y, colorFunc(b))
 		}
 	}
 
@@ -168,7 +190,7 @@ func main() {
 	enc := NewEncoder()
 	enc.Resize.W, enc.Resize.H = parseDims(*dims)
 
-	if err := enc.Encode(bw, r); err != nil {
+	if err := enc.Encode(bw, r, *hasColor); err != nil {
 		log.Fatal(err)
 	}
 }
