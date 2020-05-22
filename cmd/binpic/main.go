@@ -31,11 +31,13 @@ var (
 
 // parseDims parses dimensions (like 200x100) or returns 0, if there was any error while parsing.
 func parseDims(s string) (width, height int) {
-	parts := strings.Split(s, "x")
+	var (
+		parts = strings.Split(s, "x")
+		err   error
+	)
 	if len(parts) != 2 {
 		return 0, 0
 	}
-	var err error
 	if width, err = strconv.Atoi(strings.TrimSpace(parts[0])); err != nil {
 		return 0, 0
 	}
@@ -49,10 +51,12 @@ func parseDims(s string) (width, height int) {
 // e.g. from filesize. The pct parameter can be used to control the ratio,
 // e.g. given 0.15 the image height will be 15% less than the square.
 func dimsFromSize(size int64, pct float64) (width, height int) {
-	sizef := float64(size)
-	sq := math.Sqrt(sizef)
-	h := math.Ceil(sq - sq*pct)
-	w := math.Ceil(sizef / h)
+	var (
+		sizef = float64(size)
+		sq    = math.Sqrt(sizef)
+		h     = math.Ceil(sq - sq*pct)
+		w     = math.Ceil(sizef / h)
+	)
 	return int(w), int(h)
 }
 
@@ -62,9 +66,9 @@ func calcGreyShade(b byte) color.RGBA {
 
 func calcColor(b byte) color.RGBA {
 	return color.RGBA{
-		((b & 0300) >> 6) * 64,
-		((b & 0070) >> 3) * 32,
-		(b & 0007) * 32,
+		((b & 0o300) >> 6) * 64,
+		((b & 0o070) >> 3) * 32,
+		(b & 0o007) * 32,
 		0xff,
 	}
 }
