@@ -18,7 +18,7 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-// Version is the current version of this tool.
+// Version of tool.
 const Version = "0.2.0"
 
 var (
@@ -27,6 +27,7 @@ var (
 	dims     = flag.String("resize", "0x0", "resize, if set")
 	output   = flag.String("o", "output.png", "output file, will be a PNG")
 	version  = flag.Bool("version", false, "show version")
+	invert   = flag.Bool("invert", false, "invert color")
 )
 
 // parseDims parses dimensions (like 200x100) or returns 0, if there was any error while parsing.
@@ -60,6 +61,14 @@ func dimsFromSize(size int64, pct float64) (width, height int) {
 	return int(w), int(h)
 }
 
+func keepColor(c color.RGBA) color.RGBA {
+	return c
+}
+
+func invertColor(c color.RGBA) color.RGBA {
+	return color.RGBA{255 - c.R, 255 - c.G, 255 - c.B, c.A}
+}
+
 func calcGreyShade(b byte) color.RGBA {
 	return color.RGBA{b, b, b, 0xff}
 }
@@ -79,24 +88,24 @@ type Encoder struct {
 		W int
 		H int
 	}
-	RatioPct float64
-	Fill     uint8
+	RatioPct       float64
+	Fill           uint8
+	ColorTransform func(color.RGBA) color.RGBA
+	ColorFunc      func(b byte) color.RGBA
 }
 
 // NewEncoder creates an file-to-image encoder with defaults.
 func NewEncoder() *Encoder {
-	return &Encoder{RatioPct: 0.15, Fill: 255}
+	return &Encoder{RatioPct: 0.15, Fill: 255, ColorFunc: calcGreyShade, ColorTransform: keepColor}
 }
 
-// shouldResize indicated, whether image should be resized in the process.
+// shouldResize indicates, whether image should be resized in the process.
 func (enc *Encoder) shouldResize() bool {
 	return enc.Resize.W > 0 && enc.Resize.H > 0
 }
 
 // Encode reads bytes from reader and writes a PNG image to the writer.
-// Although a reader is accepted, the implementation might be limited to more
-// concrete types. XXX: Accept arbitrary readers through tempfile.
-func (enc *Encoder) Encode(w io.Writer, r io.Reader, hasColor bool) error {
+func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 	f, ok := r.(*os.File)
 	if !ok || f == os.Stdin {
 		tf, err := ioutil.TempFile("", "binpic-temp-*.file")
@@ -113,34 +122,23 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader, hasColor bool) error {
 		}
 		f = tf
 	}
-
 	fi, err := os.Stat(f.Name())
 	if err != nil {
 		return err
 	}
-	width, height := dimsFromSize(fi.Size(), enc.RatioPct)
-
-	// A Rectangle contains the points with Min.X <= X < Max.X, Min.Y <= Y <
-	// Max.Y. It is well-formed if Min.X <= Max.X and likewise for Y. Points
-	// are always well-formed. A rectangle's methods always return well-formed
-	// outputs for well-formed inputs.
-	rect := image.Rectangle{
-		Min: image.Point{X: 0, Y: 0},          // up left
-		Max: image.Point{X: width, Y: height}, // down right
-	}
-	img := image.NewRGBA(rect)
-
-	// Reader that allows to read byte per byte.
-	br := bufio.NewReader(f)
-
-	// Determine pixel generation algorithm.
-	var colorFunc func(byte) color.RGBA
-	if hasColor {
-		colorFunc = calcColor
-	} else {
-		colorFunc = calcGreyShade
-	}
-
+	var (
+		width, height = dimsFromSize(fi.Size(), enc.RatioPct)
+		// A Rectangle contains the points with Min.X <= X < Max.X, Min.Y <= Y <
+		// Max.Y. It is well-formed if Min.X <= Max.X and likewise for Y. Points
+		// are always well-formed. A rectangle's methods always return well-formed
+		// outputs for well-formed inputs.
+		rect = image.Rectangle{
+			Min: image.Point{X: 0, Y: 0},          // up left
+			Max: image.Point{X: width, Y: height}, // down right
+		}
+		img = image.NewRGBA(rect)
+		br  = bufio.NewReader(f)
+	)
 	// Create a line by line image.
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
@@ -153,7 +151,7 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader, hasColor bool) error {
 			if err != nil {
 				return err
 			}
-			img.Set(x, y, colorFunc(b))
+			img.Set(x, y, enc.ColorTransform(enc.ColorFunc(b)))
 		}
 	}
 
@@ -193,8 +191,13 @@ func main() {
 
 	enc := NewEncoder()
 	enc.Resize.W, enc.Resize.H = parseDims(*dims)
-
-	if err := enc.Encode(bw, r, *hasColor); err != nil {
+	if *hasColor {
+		enc.ColorFunc = calcColor
+	}
+	if *invert {
+		enc.ColorTransform = invertColor
+	}
+	if err := enc.Encode(bw, r); err != nil {
 		log.Fatal(err)
 	}
 }
