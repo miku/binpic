@@ -36,7 +36,7 @@ library](https://github.com/disintegration/imaging) helps, too.
 This is a toy project, still want to try it out?
 
 ```shell
-$ go get github.com/miku/binpic/cmd/...
+$ go install github.com/miku/binpic/cmd/binpic@latest
 ```
 
 ## Gallery
