@@ -154,7 +154,6 @@ func (enc *Encoder) Encode(w io.Writer, r io.Reader) error {
 			img.Set(x, y, enc.ColorTransform(enc.ColorFunc(b)))
 		}
 	}
-
 	var output image.Image = img
 	if enc.shouldResize() {
 		output = imaging.Resize(img, enc.Resize.W, enc.Resize.H, imaging.Lanczos)
@@ -170,7 +169,6 @@ func main() {
 		os.Exit(0)
 	}
 	var r io.Reader = os.Stdin
-
 	if flag.NArg() > 0 {
 		f, err := os.Open(flag.Arg(0))
 		if err != nil {
@@ -179,7 +177,6 @@ func main() {
 		defer f.Close()
 		r = f
 	}
-
 	of, err := os.Create(*output)
 	if err != nil {
 		log.Fatal(err)
